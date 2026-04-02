@@ -12,7 +12,7 @@ const defaultUrl = process.env.VERCEL_URL
 
 export const metadata: Metadata = {
   metadataBase: new URL(defaultUrl),
-  title: "EDUMO — Student Portal",
+  title: "Tsag mergen",
   description: "Your personal student dashboard for homework, grades, and schedules.",
 };
 
