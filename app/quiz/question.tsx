@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { createClient } from '@/lib/supabase/client'
+import type { DemoUserWithClass } from '@/lib/types'
 
 interface Question {
     id: string
@@ -10,12 +11,22 @@ interface Question {
 }
 
 interface QuestionsProps {
-    user: any
-    onComplete: (updatedUser: any) => void
+    user: DemoUserWithClass
+    onComplete: (updatedUser: DemoUserWithClass) => void
 }
 
-const stressMap: Record<string, string> = { very_low: 'high', low: 'medium', medium: 'low', high: 'very_low' }
-const riskMap: Record<string, string> = { very_easy: 'low', easy: 'low', medium: 'medium', hard: 'high' }
+const stressMap: Record<string, string> = { 
+    very_low: 'high', 
+    low:      'medium', 
+    medium:   'low', 
+    high:     'very_low' 
+}
+const riskMap: Record<string, string> = { 
+    very_easy: 'low', 
+    easy:      'low', 
+    medium:    'medium', 
+    hard:      'high' 
+}
 
 const normalizeOptions = (options: any): { label: string; value: string }[] =>
     Array.isArray(options)
@@ -27,14 +38,15 @@ const isNumber = (cat: string) => cat === 'grade'
 
 export default function Questions({ user, onComplete }: QuestionsProps) {
     const [questions, setQuestions] = useState<Question[]>([])
-    const [current, setCurrent] = useState(0)
-    const [answers, setAnswers] = useState<Record<string, any>>({})
-    const [loading, setLoading] = useState(true)
-    const [saving, setSaving] = useState(false)
-    const [error, setError] = useState<string | null>(null)
+    const [current, setCurrent]     = useState(0)
+    const [answers, setAnswers]     = useState<Record<string, string>>({})
+    const [loading, setLoading]     = useState(true)
+    const [saving, setSaving]       = useState(false)
+    const [error, setError]         = useState<string | null>(null)
     const [animating, setAnimating] = useState(false)
     const [direction, setDirection] = useState<'forward' | 'back'>('forward')
     const supabase = createClient()
+
     useEffect(() => {
         supabase
             .from('questions')
@@ -45,7 +57,7 @@ export default function Questions({ user, onComplete }: QuestionsProps) {
                 else setQuestions(data || [])
                 setLoading(false)
             })
-    }, [])
+    }, [supabase])
 
     const goTo = (next: number, dir: 'forward' | 'back') => {
         setDirection(dir)
@@ -63,16 +75,27 @@ export default function Questions({ user, onComplete }: QuestionsProps) {
         setSaving(true)
         setError(null)
 
-        const payload: Record<string, any> = { user_id: user.user_id }
+        interface ProfilePayload {
+            user_id: string;
+            learning_style?: string;
+            stress_level?: string;
+            procrastination_risk?: string;
+            reminder_tone?: string;
+            home_arrival_time?: string;
+            study_start_time?: string;
+            sleep_time?: string;
+        }
+
+        const payload: ProfilePayload = { user_id: user.user_id }
 
         questions.forEach((q) => {
             const value = answers[q.id]
             if (value === undefined) return
             switch (q.category) {
-                case 'learning_style': payload.learning_style = value; break
-                case 'energy_level': payload.stress_level = stressMap[value] ?? value; break
+                case 'learning_style':     payload.learning_style = value; break
+                case 'energy_level':       payload.stress_level = stressMap[value] ?? value; break
                 case 'homework_difficulty': payload.procrastination_risk = riskMap[value] ?? value; break
-                case 'reminder_tone': payload.reminder_tone = value; break
+                case 'reminder_tone':      payload.reminder_tone = value; break
                 case 'schedule': {
                     const t = value.length === 5 ? `${value}:00` : value
                     const text = q.question_text.toLowerCase()
@@ -84,7 +107,7 @@ export default function Questions({ user, onComplete }: QuestionsProps) {
             }
         })
 
-        const { error: err } = await supabase.from('user_profiles').upsert(payload, { onConflict: 'user_id' })
+        const { error: err } = await supabase.from('user_profiles').upsert(payload as any, { onConflict: 'user_id' })
         if (err) { setError('Failed to save your profile. Please try again.'); setSaving(false) }
         else onComplete(user)
     }
@@ -109,9 +132,9 @@ export default function Questions({ user, onComplete }: QuestionsProps) {
     const q = questions[current]
     const opts = normalizeOptions(q.options)
     const currentAnswer = answers[q.id] ?? ''
-    const progress = ((current + 1) / questions.length) * 100
-    const isLast = current === questions.length - 1
-    const canProceed = currentAnswer !== ''
+    const progress      = ((current + 1) / questions.length) * 100
+    const isLast        = current === questions.length - 1
+    const canProceed    = currentAnswer !== ''
 
     return (
         <div className="min-h-screen flex items-center justify-center bg-[#f5f0e8] font-['Sora',sans-serif] p-6 relative overflow-hidden">
@@ -137,7 +160,7 @@ export default function Questions({ user, onComplete }: QuestionsProps) {
                         ? (direction === 'forward' ? 'opacity-0 -translate-x-5' : 'opacity-0 translate-x-5')
                         : 'opacity-100 translate-x-0 animate-[slideIn_0.3s_cubic-bezier(0.22,1,0.36,1)_forwards]'
                 }`}>
-                    <div className="text-[0.68rem] font-semibold tracking-[0.1em] uppercase text-[#9b8c79] mb-3.5">{q.category.replace(/_/g, ' ')}</div>
+                    <div className="text-[0.68rem] font-semibold tracking-[0.1em] uppercase text-[#9b8c79] mb-3.5 font-sans whitespace-nowrap">{q.category.replace(/_/g, ' ')}</div>
                     <h2 className="font-['Lora',serif] text-[1.55rem] max-sm:text-[1.25rem] font-semibold text-[#2c2416] leading-[1.35] m-0 mb-7 -tracking-[0.02em]">{q.question_text}</h2>
 
                     {/* Options grid or text input */}
@@ -146,13 +169,13 @@ export default function Questions({ user, onComplete }: QuestionsProps) {
                             {opts.map((opt) => (
                                 <button
                                     key={opt.value}
-                                    className={`relative border-[1.5px] rounded-xl py-[13px] px-[18px] text-[0.9rem] font-medium cursor-pointer text-left transition-all duration-[180ms] ease-out font-['Sora',sans-serif] flex items-center gap-2.5
+                                    className={`relative border-[1.5px] rounded-xl py-[13px] px-[18px] text-[0.9rem] font-medium cursor-pointer text-left transition-all duration-[180ms] ease-out flex items-center gap-2.5
                                         ${currentAnswer === opt.value
                                             ? 'bg-[#2c2416] text-[#f5f0e8] border-[#2c2416] hover:bg-[#3a3028] hover:border-[#3a3028]'
                                             : 'bg-[#f5f0e8] text-[#3a3028] border-transparent hover:bg-[#ede7d8] hover:border-black/10 hover:-translate-y-px'}`}
                                     onClick={() => handleSelect(opt.value)}
                                 >
-                                    {currentAnswer === opt.value && <span className="text-[0.8rem] text-[#c9d8b6] shrink-0">✓</span>}
+                                    {currentAnswer === opt.value && <span className="text-[0.8rem] text-[#c9d8b6] shrink-0 font-sans">✓</span>}
                                     {opt.label}
                                 </button>
                             ))}
@@ -161,7 +184,7 @@ export default function Questions({ user, onComplete }: QuestionsProps) {
                         <div className="flex-1 flex items-start pt-2">
                             <input
                                 type={isTime(q.category) ? 'time' : isNumber(q.category) ? 'number' : 'text'}
-                                className="w-full bg-[#f0ebe0] border-[1.5px] border-black/[0.08] rounded-xl py-[14px] px-[18px] text-base font-medium text-[#2c2416] font-['Sora',sans-serif] outline-none transition-all duration-[180ms] focus:border-[#7ea86a] focus:shadow-[0_0_0_3px_rgba(126,168,106,0.15)] placeholder:text-[#b0a596] placeholder:font-normal"
+                                className="w-full bg-[#f0ebe0] border-[1.5px] border-black/[0.08] rounded-xl py-[14px] px-[18px] text-base font-medium text-[#2c2416] outline-none transition-all duration-[180ms] focus:border-[#7ea86a] focus:shadow-[0_0_0_3px_rgba(126,168,106,0.15)] placeholder:text-[#b0a596] placeholder:font-normal"
                                 placeholder={isNumber(q.category) ? 'Enter a number' : 'Type your answer…'}
                                 value={currentAnswer}
                                 onChange={(e) => handleSelect(e.target.value)}
@@ -170,20 +193,20 @@ export default function Questions({ user, onComplete }: QuestionsProps) {
                         </div>
                     )}
 
-                    {error && <p className="mt-3 text-[0.82rem] text-[#c0392b] font-medium">{error}</p>}
+                    {error && <p className="mt-3 text-[0.82rem] text-[#c0392b] font-medium font-sans">{error}</p>}
                 </div>
 
                 {/* Navigation */}
                 <div className="flex items-center justify-between mt-5">
                     <button
-                        className="bg-transparent border-none font-['Sora',sans-serif] text-[0.88rem] font-medium text-[#7a6e5f] cursor-pointer py-2.5 px-0 transition-colors duration-[180ms] hover:text-[#2c2416] disabled:opacity-30 disabled:cursor-not-allowed"
+                        className="bg-transparent border-none text-[0.88rem] font-medium text-[#7a6e5f] cursor-pointer py-2.5 px-0 transition-colors duration-[180ms] hover:text-[#2c2416] disabled:opacity-30 disabled:cursor-not-allowed font-sans"
                         onClick={() => goTo(current - 1, 'back')}
                         disabled={current === 0}
                     >
                         ← Back
                     </button>
                     <button
-                        className="bg-[#2c2416] text-[#f5f0e8] border-none rounded-xl py-[13px] px-7 font-['Sora',sans-serif] text-[0.9rem] font-semibold cursor-pointer transition-all duration-[180ms] ease-out min-w-[140px] flex items-center justify-center gap-2 hover:bg-[#3a3028] hover:-translate-y-px hover:shadow-[0_4px_16px_rgba(44,36,22,0.2)] disabled:opacity-35 disabled:cursor-not-allowed disabled:translate-y-0 disabled:shadow-none"
+                        className="bg-[#2c2416] text-[#f5f0e8] border-none rounded-xl py-[13px] px-7 text-[0.9rem] font-semibold cursor-pointer transition-all duration-[180ms] ease-out min-w-[140px] flex items-center justify-center gap-2 hover:bg-[#3a3028] hover:-translate-y-px hover:shadow-[0_4px_16px_rgba(44,36,22,0.2)] disabled:opacity-35 disabled:cursor-not-allowed disabled:translate-y-0 disabled:shadow-none font-sans"
                         onClick={handleNext}
                         disabled={!canProceed || saving}
                     >

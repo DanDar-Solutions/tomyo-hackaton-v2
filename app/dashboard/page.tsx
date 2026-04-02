@@ -1,5 +1,5 @@
 import { cookies } from "next/headers";
-import { getStudentDashboardData } from "@/core/fetches";
+import { getStudentDashboardData } from "@/lib/services/student.service";
 import StudentDashboard from "@/components/dashboard/dashboard";
 import { DashboardSkeleton } from "./dashboard-skeleton";
 import { Suspense } from "react";
@@ -11,23 +11,24 @@ async function DashboardDataWrapper() {
     const customUserStr = cookieStore.get("custom_auth_user")?.value;
     const { homework, schedule, profile, user: studentInfo, error: fetchError } =
         await getStudentDashboardData(customUserStr);
+
     if (fetchError || !studentInfo) {
         redirect("/auth/login");
     }
+
     return (
-        (
-            <>
+        <>
             <DailyPage userId={studentInfo.user_id} />
-        <StudentDashboard
-            user={studentInfo}
-            homework={homework ?? []}
-            schedule={schedule ?? []}
-            profile={profile ?? null}
+            <StudentDashboard
+                user={studentInfo}
+                homework={homework ?? []}
+                schedule={schedule ?? []}
+                profile={profile ?? null}
             />
-            </>
-            )
+        </>
     );
 }
+
 export default function DashboardPage() {
     return (
         <Suspense fallback={<DashboardSkeleton />}>

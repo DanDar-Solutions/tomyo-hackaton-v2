@@ -1,5 +1,5 @@
 "use client";
-import { useDailyPlan, Task } from "@/hook/useDailyPlan";
+import { useDailyPlan, type DailyTask } from "@/lib/hooks/use-daily-plan";
 
 interface DailyPlanPageProps { userId: string; onBack?: () => void; }
 
@@ -16,7 +16,7 @@ const formatDate = (d: string) =>
         weekday: "long", year: "numeric", month: "long", day: "numeric",
     });
 
-function TaskCard({ task, index }: { task: Task; index: number }) {
+function TaskCard({ task, index }: { task: DailyTask; index: number }) {
     return (
         <div
             className={`bg-[#fffdf8] border border-[rgba(28,26,21,0.12)] rounded-xl px-6 py-[22px] shadow-[0_2px_16px_rgba(28,26,21,0.08)] animate-[fadeUp_0.4s_ease_both] transition-shadow duration-[180ms] hover:shadow-[0_4px_24px_rgba(28,26,21,0.12)] ${task.is_urgent ? 'border-l-[3px] border-l-[#8b2020]' : ''}`}

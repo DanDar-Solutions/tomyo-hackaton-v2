@@ -1,22 +1,15 @@
-/** @type {import('next').NextConfig} */
-const nextConfig = {
-  cacheComponents: true,
-  images: {
-    remotePatterns: [
-      {
-        protocol: "https",
-        hostname: "via.placeholder.com",
-        port: "",
-        pathname: "/**",
-      },
-      {
-        protocol: "https",
-        hostname: "placeimg.com",
-        port: "",
-        pathname: "/**",
-      },
-    ],
-  },
+import type { NextConfig } from "next";
+
+const nextConfig: NextConfig = {
+    images: {
+        remotePatterns: [
+            {
+                protocol: "https",
+                hostname: "*.supabase.co",
+                pathname: "/storage/**",
+            },
+        ],
+    },
 };
 
-module.exports = nextConfig;
+export default nextConfig;

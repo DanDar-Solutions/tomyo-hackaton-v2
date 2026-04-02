@@ -10,7 +10,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { User, LogOut, LayoutDashboard } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { signOut } from "@/core/auth-action";
+import { signOut } from "@/lib/services/auth.service";
 import { toast } from "sonner";
 
 export function ProfileButton({ initials, email }: { initials: string, email: string }) {

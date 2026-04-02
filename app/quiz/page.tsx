@@ -3,11 +3,12 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Questions from "./question";
-import { getCurrentDemoUser } from "@/core/auth-action";
+import { getCurrentDemoUser } from "@/lib/services/auth.service";
+import type { DemoUserWithClass } from "@/lib/types";
 
 export default function QuizPage() {
     const router = useRouter();
-    const [user, setUser] = useState<any>(null);
+    const [user, setUser] = useState<DemoUserWithClass | null>(null);
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
@@ -33,11 +34,11 @@ export default function QuizPage() {
 
     return (
         <main className="flex flex-col min-h-screen">
-            <Questions 
-                user={user} 
+            <Questions
+                user={user}
                 onComplete={() => {
                     router.push("/dashboard");
-                }} 
+                }}
             />
         </main>
     );

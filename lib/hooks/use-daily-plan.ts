@@ -1,25 +1,9 @@
 import { useState } from "react";
 import { createClient } from "@/lib/supabase/client";
+import type { DailyPlan } from "@/lib/types";
 
-
-export interface Task {
-    task: string;
-    subject: string;
-    homework_id: string | null;
-    duration_minutes: number;
-    is_urgent: boolean;
-    reason: string;
-    study_tip: string;
-}
-
-export interface DailyPlan {
-    summary: string;
-    stress_load: "low" | "medium" | "high";
-    recommended_start_time: string;
-    tasks: Task[];
-    ai_message: string;
-}
-
+export type { DailyPlan };
+export type { DailyTask } from "@/lib/types";
 
 export function useDailyPlan() {
     const supabase = createClient();
@@ -44,8 +28,10 @@ export function useDailyPlan() {
         }
     };
 
-    const reset = () => { setPlan(null); setError(null); };
+    const reset = () => {
+        setPlan(null);
+        setError(null);
+    };
 
     return { plan, loading, error, generatePlan, reset };
-
 }

@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { signinRegistry } from '@/core/auth-action'
+import { signinRegistry } from '@/lib/services/auth.service'
 
 export default function LoginPage() {
     const router = useRouter()
@@ -25,10 +25,8 @@ export default function LoginPage() {
             return
         }
 
-        // Cookie is already set by the server action.
-        // Redirect: if no quiz yet → /quiz, else → /dashboard
         router.push(result.hasQuiz ? '/dashboard' : '/quiz')
-        router.refresh()   // force navbar/layout to re-read the cookie
+        router.refresh()
     }
 
     return (

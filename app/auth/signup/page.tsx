@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { signupRegistry } from '@/core/auth-action'
+import { signupRegistry } from '@/lib/services/auth.service'
 
 export default function SignupPage() {
     const router = useRouter()
@@ -37,7 +37,6 @@ export default function SignupPage() {
             return
         }
 
-        // Account created & auto-logged-in → go to quiz onboarding
         setSuccess(true)
         setTimeout(() => {
             router.push('/quiz')
@@ -67,7 +66,6 @@ export default function SignupPage() {
                     </div>
                 ) : (
                     <form onSubmit={handleSignUp} className="flex flex-col gap-4">
-                        {/* User ID */}
                         <div className="flex flex-col gap-1.5">
                             <label className="text-[13px] font-medium text-[#3d3830]">Your ID</label>
                             <input
@@ -81,7 +79,6 @@ export default function SignupPage() {
                             />
                         </div>
 
-                        {/* Password */}
                         <div className="flex flex-col gap-1.5">
                             <label className="text-[13px] font-medium text-[#3d3830]">Password</label>
                             <input
@@ -95,7 +92,6 @@ export default function SignupPage() {
                             />
                         </div>
 
-                        {/* Re-enter Password */}
                         <div className="flex flex-col gap-1.5">
                             <label className="text-[13px] font-medium text-[#3d3830]">Re-enter Password</label>
                             <input
@@ -110,18 +106,16 @@ export default function SignupPage() {
                                 }`}
                             />
                             {matchError && (
-                                <span className="text-[12px] text-[#e74c3c] mt-0.5">Passwords don't match</span>
+                                <span className="text-[12px] text-[#e74c3c] mt-0.5">Passwords don&apos;t match</span>
                             )}
                         </div>
 
-                        {/* Error */}
                         {error && (
                             <p className="text-[13px] text-[#c0392b] bg-[#fdf0ee] border border-[#f5c6c0] rounded-lg p-2.5 px-3 m-0">
                                 {error}
                             </p>
                         )}
 
-                        {/* Submit */}
                         <button
                             type="submit"
                             disabled={loading}
@@ -133,7 +127,6 @@ export default function SignupPage() {
                             }
                         </button>
 
-                        {/* Link to Login */}
                         <p className="text-[13px] text-[#7a7268] text-center m-0 mt-2">
                             Already have an account?{' '}
                             <Link href="/auth/login" className="text-[#2c2620] font-medium underline underline-offset-2 hover:opacity-70 transition-opacity">

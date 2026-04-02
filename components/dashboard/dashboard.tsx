@@ -1,50 +1,6 @@
 "use client";
 
-// ─── Interfaces ──────────────────────────────────────────────────────────────
-
-interface DbHomework {
-    id?: number | string;
-    title?: string;
-    subject?: string;
-    description?: string | null;
-    assigned_date?: string | null;
-    due_date?: string | null;
-    difficulty?: string | null;
-    estimated_minutes?: number | null;
-    status?: string | null;
-    [key: string]: unknown;
-}
-
-interface DbSchedule {
-    id?: string;
-    day_of_week?: number; // 0=Sun … 6=Sat
-    period?: number;
-    subject?: string;
-    start_time?: string;
-    end_time?: string;
-}
-
-interface DbProfile {
-    learning_style?: string | null;
-    stress_level?: string | null;
-    study_start_time?: string | null;
-    home_arrival_time?: string | null;
-    sleep_time?: string | null;
-    [key: string]: unknown;
-}
-
-interface Props {
-    user: {
-        user_id?: string;
-        first_name?: string;
-        class_id?: string;
-        classes?: { grade?: number; class_section?: string; class_name?: string };
-        [key: string]: unknown;
-    };
-    homework?: DbHomework[];
-    schedule?: DbSchedule[];
-    profile?: DbProfile | null;
-}
+import type { StudentDashboardProps, Homework, Schedule } from "@/lib/types";
 
 // ─── Constants ───────────────────────────────────────────────────────────────
 
@@ -107,10 +63,10 @@ function buildCalendar() {
 
 // ─── Component ───────────────────────────────────────────────────────────────
 
-export default function StudentDashboard({ user, homework, schedule = [], profile }: Props) {
+export default function StudentDashboard({ user, homework = [], schedule = [], profile }: StudentDashboardProps) {
     const homeworks =
-        homework && homework.length > 0
-            ? homework.map((hw, i) => ({
+        homework.length > 0
+            ? homework.map((hw: Homework, i: number) => ({
                   id:         hw.id ?? i,
                   subject:    hw.subject || "Assignment",
                   task:       hw.title || "Untitled",
@@ -126,15 +82,15 @@ export default function StudentDashboard({ user, homework, schedule = [], profil
 
     const { cells, monthName, today, formattedDate } = buildCalendar();
 
-    const displayName = (user?.first_name as string) || user?.user_id || "Student";
+    const displayName = user?.user_id || "Student";
     const classLabel  = user?.classes?.class_name
         ? `Grade ${user.classes.grade} — Section ${user.classes.class_section}`
         : null;
 
     const todayDow      = new Date().getDay();
     const todaySchedule = schedule
-        .filter((s) => s.day_of_week === todayDow)
-        .sort((a, b) => (a.period ?? 0) - (b.period ?? 0));
+        .filter((s: Schedule) => s.day_of_week === todayDow)
+        .sort((a: Schedule, b: Schedule) => (a.period ?? 0) - (b.period ?? 0));
 
     const focusSubject = homeworks[0]?.subject ?? todaySchedule[0]?.subject ?? "No tasks";
     const focusTopic   = homeworks[0]?.task    ?? (todaySchedule[0] ? `${todaySchedule[0].start_time} – ${todaySchedule[0].end_time}` : "");
@@ -176,12 +132,9 @@ export default function StudentDashboard({ user, homework, schedule = [], profil
                         <div className="flex flex-col gap-5">
                             {homeworks.map((hw) => (
                                 <div key={hw.id} className="flex items-center gap-5">
-                                    {/* Due label */}
                                     <div className={`text-[14px] font-bold min-w-[64px] text-right ${hw.time === "Overdue" ? "text-[#d83a3a]" : hw.time === "Today" ? "text-[#f9c02d]" : "text-[#a0a3bd]"}`}>
                                         {hw.time}
                                     </div>
-
-                                    {/* Pill */}
                                     <div className={`flex-1 flex items-center px-6 py-4 rounded-2xl cursor-pointer transition-all duration-200 hover:-translate-y-0.5 hover:shadow-[0_8px_16px_rgba(0,0,0,0.04)] ${hw.color}`}>
                                         <div className={`w-5 h-5 rounded-full mr-4 shrink-0 ${hw.dot}`} />
                                         <div className="flex flex-col gap-1 flex-1 min-w-0">
@@ -209,17 +162,12 @@ export default function StudentDashboard({ user, homework, schedule = [], profil
                 {/* ══ RIGHT: CALENDAR ══ */}
                 <div className="flex flex-col xl:border-l-2 xl:border-[#f4f5f7] xl:pl-16 pt-10 xl:pt-0 border-t-2 xl:border-t-0 border-[#f4f5f7]">
 
-                    {/* Upcoming bubbles + focus */}
                     <div className="flex flex-col items-center mb-10">
                         <div className="flex items-center gap-4 mb-6">
                             <span className="text-[#e2e4e8] text-2xl font-light">←</span>
-
-                            {/* Today bubble (large) */}
                             <div className="w-20 h-20 rounded-full bg-[#ffebb2] text-white flex items-center justify-center text-3xl font-extrabold drop-shadow-sm">
                                 {today}
                             </div>
-
-                            {/* Small accent bubbles */}
                             <div className="w-11 h-11 rounded-full bg-[#ffc6bd] flex items-center justify-center text-[15px] font-bold text-white">
                                 {today + 4 <= 31 ? today + 4 : today - 4}
                             </div>
@@ -229,19 +177,16 @@ export default function StudentDashboard({ user, homework, schedule = [], profil
                             <div className="w-11 h-11 rounded-full bg-[#e0e4fe] flex items-center justify-center text-[15px] font-bold text-white">
                                 {today - 6 > 0 ? today - 6 : today + 6}
                             </div>
-
                             <span className="text-[#e2e4e8] text-2xl font-light">→</span>
                         </div>
 
-                        <h4 className="text-sm font-bold text-[#f9c02d] mb-1">Today's Focus</h4>
+                        <h4 className="text-sm font-bold text-[#f9c02d] mb-1">Today&apos;s Focus</h4>
                         <p className="text-[13px] font-medium text-[#a0a3bd]">
                             {focusSubject}{focusTopic ? ` — ${focusTopic}` : ""}
                         </p>
                     </div>
 
-                    {/* Calendar card */}
                     <div>
-                        {/* Calendar header */}
                         <div className="flex justify-between items-center mb-6">
                             <div>
                                 <h3 className="text-[16px] font-extrabold text-[#1a1b24] m-0">Calendar</h3>
@@ -253,12 +198,10 @@ export default function StudentDashboard({ user, homework, schedule = [], profil
                             </div>
                         </div>
 
-                        {/* Month name */}
                         <h4 className="text-center text-[15px] font-bold text-[#1a1b24] mb-6">
                             {monthName}
                         </h4>
 
-                        {/* Day-of-week headers + dates */}
                         <div className="grid grid-cols-7 text-center mb-10 gap-y-4">
                             {["SUN", "MON", "TUE", "WED", "THU", "FRI", "SAT"].map((d) => (
                                 <div key={d} className="text-[11px] font-bold text-[#a0a3bd] uppercase mb-2">
@@ -283,7 +226,6 @@ export default function StudentDashboard({ user, homework, schedule = [], profil
                             ))}
                         </div>
 
-                        {/* Legend */}
                         <div className="flex gap-6 justify-center border-t border-[#f4f5f7] pt-6 flex-wrap">
                             {[
                                 { color: "bg-[#606fce]", label: "Activities" },
