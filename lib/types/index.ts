@@ -24,6 +24,7 @@ export interface StudentDashboardProps {
     user: DemoUserWithClass;
     homework: Homework[];
     schedule: Schedule[];
+    gradeEvents: GradeEvent[];
     profile: Pick<
         UserProfile,
         "learning_style" | "stress_level" | "study_start_time" | "home_arrival_time" | "sleep_time"

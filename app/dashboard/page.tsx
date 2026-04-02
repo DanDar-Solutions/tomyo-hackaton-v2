@@ -9,7 +9,7 @@ import DailyPage from "./DailyPage";
 async function DashboardDataWrapper() {
     const cookieStore = await cookies();
     const customUserStr = cookieStore.get("custom_auth_user")?.value;
-    const { homework, schedule, profile, user: studentInfo, error: fetchError } =
+    const { homework, schedule, profile, gradeEvents, user: studentInfo, error: fetchError } =
         await getStudentDashboardData(customUserStr);
 
     if (fetchError || !studentInfo) {
@@ -23,6 +23,7 @@ async function DashboardDataWrapper() {
                 user={studentInfo}
                 homework={homework ?? []}
                 schedule={schedule ?? []}
+                gradeEvents={gradeEvents ?? []}
                 profile={profile ?? null}
             />
         </>

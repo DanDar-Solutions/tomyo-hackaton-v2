@@ -1,6 +1,6 @@
 "use client";
 
-import type { StudentDashboardProps, Homework, Schedule } from "@/lib/types";
+import type { StudentDashboardProps, Homework, Schedule, GradeEvent } from "@/lib/types";
 
 // ─── Constants ───────────────────────────────────────────────────────────────
 
@@ -38,7 +38,15 @@ function capitalize(s: string): string {
     return s.charAt(0).toUpperCase() + s.slice(1).toLowerCase();
 }
 
-function buildCalendar() {
+interface CalendarCell {
+    num: number;
+    faded?: boolean;
+    isToday?: boolean;
+    hasHomework?: boolean;
+    hasEvent?: boolean;
+}
+
+function buildCalendar(homework: Homework[], gradeEvents: GradeEvent[]) {
     const now        = new Date();
     const year       = now.getFullYear();
     const month      = now.getMonth();
@@ -50,20 +58,52 @@ function buildCalendar() {
     const daysInMonth = new Date(year, month + 1, 0).getDate();
     const daysInPrev  = new Date(year, month, 0).getDate();
 
-    const cells: { num: number; faded?: boolean; isToday?: boolean }[] = [];
+    const cells: CalendarCell[] = [];
 
-    for (let i = firstDow - 1; i >= 0; i--)  cells.push({ num: daysInPrev - i, faded: true });
-    for (let d = 1; d <= daysInMonth; d++)    cells.push({ num: d, isToday: d === today });
+    // Map homework and events by day for quick lookup
+    const homeworkDays = new Set(
+        homework
+            .map(h => h.due_date ? new Date(h.due_date + "T00:00:00") : null)
+            .filter(d => d && d.getMonth() === month && d.getFullYear() === year)
+            .map(d => d!.getDate())
+    );
 
+    const eventDays = new Set(
+        gradeEvents
+            .map(e => new Date(e.event_date + "T00:00:00"))
+            .filter(d => d.getMonth() === month && d.getFullYear() === year)
+            .map(d => d.getDate())
+    );
+
+    // Padding from previous month
+    for (let i = firstDow - 1; i >= 0; i--) {
+        cells.push({ num: daysInPrev - i, faded: true });
+    }
+
+    // Current month days
+    for (let d = 1; d <= daysInMonth; d++) {
+        cells.push({ 
+            num: d, 
+            isToday: d === today,
+            hasHomework: homeworkDays.has(d),
+            hasEvent: eventDays.has(d)
+        });
+    }
+
+    // Padding for next month
     const trailing = 7 - (cells.length % 7);
-    if (trailing < 7) for (let d = 1; d <= trailing; d++) cells.push({ num: d, faded: true });
+    if (trailing < 7) {
+        for (let d = 1; d <= trailing; d++) {
+            cells.push({ num: d, faded: true });
+        }
+    }
 
     return { cells, monthName, today, formattedDate };
 }
 
 // ─── Component ───────────────────────────────────────────────────────────────
 
-export default function StudentDashboard({ user, homework = [], schedule = [], profile }: StudentDashboardProps) {
+export default function StudentDashboard({ user, homework = [], schedule = [], gradeEvents = [], profile }: StudentDashboardProps) {
     const homeworks =
         homework.length > 0
             ? homework.map((hw: Homework, i: number) => ({
@@ -80,7 +120,7 @@ export default function StudentDashboard({ user, homework = [], schedule = [], p
               }))
             : [];
 
-    const { cells, monthName, today, formattedDate } = buildCalendar();
+    const { cells, monthName, today, formattedDate } = buildCalendar(homework, gradeEvents);
 
     const displayName = user?.user_id || "Student";
     const classLabel  = user?.classes?.class_name
@@ -94,6 +134,13 @@ export default function StudentDashboard({ user, homework = [], schedule = [], p
 
     const focusSubject = homeworks[0]?.subject ?? todaySchedule[0]?.subject ?? "No tasks";
     const focusTopic   = homeworks[0]?.task    ?? (todaySchedule[0] ? `${todaySchedule[0].start_time} – ${todaySchedule[0].end_time}` : "");
+
+    // Events happening today
+    const todayEvents = gradeEvents.filter(e => {
+        const d = new Date(e.event_date + "T00:00:00");
+        const now = new Date();
+        return d.getDate() === now.getDate() && d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
+    });
 
     return (
         <div className="font-sans max-w-[1200px] w-full mx-auto px-6 py-10 text-[#1a1b24] bg-white min-h-screen">
@@ -116,11 +163,29 @@ export default function StudentDashboard({ user, homework = [], schedule = [], p
                 {/* ══ LEFT: HOMEWORK ══ */}
                 <div className="flex flex-col">
                     <h2 className="text-xl font-bold text-[#1a1b24] mb-1">Homework Tracker</h2>
-                    <p className="text-sm text-[#a0a3bd] font-medium mb-10">
+                    <p className="text-sm text-[#a0a3bd] font-medium mb-8">
                         {new Date().toLocaleDateString("en-US", {
                             weekday: "long", day: "numeric", month: "long", year: "numeric",
                         })}
                     </p>
+
+                    {/* Quick highlight for Grade Events if any today */}
+                    {todayEvents.length > 0 && (
+                        <div className="mb-8 flex flex-col gap-3">
+                            <h3 className="text-xs font-bold text-[#606fce] uppercase tracking-wider">Today&apos;s Events</h3>
+                            {todayEvents.map(ev => (
+                                <div key={ev.id} className="bg-[#f0f2ff] border border-[#d8dcff] rounded-xl px-5 py-3 flex items-center justify-between">
+                                    <div className="flex flex-col">
+                                        <span className="text-[14px] font-bold text-[#1a1b24]">{ev.title}</span>
+                                        <span className="text-[12px] font-medium text-[#606fce]/80">{ev.event_type || 'Event'}</span>
+                                    </div>
+                                    {ev.priority === 'high' && (
+                                        <span className="bg-[#fce8e8] text-[#d83a3a] text-[10px] font-bold px-2 py-0.5 rounded-full uppercase">Priority</span>
+                                    )}
+                                </div>
+                            ))}
+                        </div>
+                    )}
 
                     {homeworks.length === 0 ? (
                         <div className="flex flex-col items-center justify-center py-16 text-center">
@@ -213,22 +278,34 @@ export default function StudentDashboard({ user, homework = [], schedule = [], p
                                 <div
                                     key={idx}
                                     className={[
-                                        "text-[13px] font-semibold h-8 flex items-center justify-center",
+                                        "relative text-[13px] font-semibold h-9 flex items-center justify-center",
                                         cell.faded
                                             ? "text-[#cbd0d9]"
                                             : cell.isToday
-                                                ? "text-white bg-[#f9c02d] rounded-full w-8 mx-auto"
+                                                ? "text-white bg-[#f9c02d] rounded-full w-9 h-9 mx-auto"
                                                 : "text-[#1a1b24]",
                                     ].join(" ")}
                                 >
                                     {cell.num}
+                                    
+                                    {/* Indicators for Events/Homework */}
+                                    {!cell.faded && (
+                                        <div className="absolute -bottom-1 left-0 right-0 flex justify-center gap-1">
+                                            {cell.hasEvent && (
+                                                <div className={`w-1.5 h-1.5 rounded-full ${cell.isToday ? "bg-white" : "bg-[#606fce]"}`} />
+                                            )}
+                                            {cell.hasHomework && (
+                                                <div className={`w-1.5 h-1.5 rounded-full ${cell.isToday ? "bg-white" : "bg-[#fc6e35]"}`} />
+                                            )}
+                                        </div>
+                                    )}
                                 </div>
                             ))}
                         </div>
 
                         <div className="flex gap-6 justify-center border-t border-[#f4f5f7] pt-6 flex-wrap">
                             {[
-                                { color: "bg-[#606fce]", label: "Activities" },
+                                { color: "bg-[#606fce]", label: "Events" },
                                 { color: "bg-[#fc6e35]", label: "Homework"   },
                                 { color: "bg-[#f9c02d]", label: "Today"      },
                             ].map(({ color, label }) => (
