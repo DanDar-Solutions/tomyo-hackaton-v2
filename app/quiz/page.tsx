@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import Questions from "@/components/auth/quiz";
+import Questions from "./question";
 import { getCurrentDemoUser } from "@/core/auth-action";
 
 export default function QuizPage() {
